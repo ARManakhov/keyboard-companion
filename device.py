@@ -22,11 +22,13 @@ class Commands(Enum):
 
 
 class Device:
-    def __init__(self, vid, pid, interface, package_size=32):
+    def __init__(self, vid, pid, interface, package_size=32, debug=False):
         self.vid = vid
         self.pid = pid
         self.interface = interface
         self.package_size = package_size
+
+        self.debug = debug
 
         self.command_description = dict()
         self.command_description[Commands.ASK_CAPABILITIES] = 0xAA
@@ -195,7 +197,8 @@ class Device:
                         == self.command_description[Commands.ASK_CAPABILITIES]
                     ):
                         self._fill_command_descriptions(confirmation)
-                    print(f"Send {package[0]:X} package")
+                    if self.debug: 
+                        print(f"Send {package[0]:X} package")
                     confirmed = True
                     break
 
@@ -264,7 +267,9 @@ class Device:
 
             self.write(package)
             package_idx += 1
-        print(f"Sent large package {report_id} with {package_idx} hid packages")
+
+        if self.debug:
+            print(f"Sent large package {report_id} with {package_idx} hid packages")
 
     @staticmethod
     def prepare_str(text, report_id: int | Commands = 0x00):
@@ -373,7 +378,8 @@ class Device:
     def send_media_cover(self, cover):
         self.clean_media_cover()
         if cover:
-            print(cover)
+            if self.debug:
+                print(cover)
             try:
                 raw_img = self.prepare_image(cover)
                 self.write_long(

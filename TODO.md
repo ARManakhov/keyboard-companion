@@ -3,3 +3,5 @@
 - [ ] Add support for windows
 - [ ] Respect capability list returned from device (don't send what it can't handle)
 - [ ] Turn it to package
+- [ ] Make GUI
+- [ ] Make device list
