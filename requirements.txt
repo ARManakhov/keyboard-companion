@@ -1,0 +1,6 @@
+dbus-python==1.4.0
+fonttools==4.63.0
+hidapi==0.15.0
+pillow==12.2.0
+pycairo==1.29.0
+PyGObject==3.56.3

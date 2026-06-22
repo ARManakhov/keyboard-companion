@@ -1,0 +1,5 @@
+- [ ] Remove font files from repo, and create script to fetch them
+- [ ] Add support for MacOs
+- [ ] Add support for windows
+- [ ] Respect capability list returned from device (don't send what it can't handle)
+- [ ] Turn it to package
