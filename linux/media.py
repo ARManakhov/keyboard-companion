@@ -1,3 +1,4 @@
+from re import L
 import threading
 import time
 
@@ -10,14 +11,17 @@ class MediaPlayerMonitor:
         self.device = device
         self.bus = bus
         self.current_player = None
-        self.position_timer = None
         self.is_running = False
         self.paused = False
         self.meta_signal_match = None
         self.prev_progress_255 = None
+        self.current_metadata = {}
 
         self.device.reconnect_callback.append(self.check_initial_state)
         self.device.reconnect_callback.append(self.send_current_meta)
+
+        self.position_worker = threading.Thread(target=self._position_loop, daemon=True)
+        self.position_worker.start()
 
     def find_active_player(self):
         players = [
@@ -47,6 +51,8 @@ class MediaPlayerMonitor:
             )
             iface = dbus.Interface(player_obj, "org.freedesktop.DBus.Properties")
             status = iface.Get("org.mpris.MediaPlayer2.Player", "PlaybackStatus")
+            metadata = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
+            self.current_metadata = metadata
             self.handle_status_change(status)
             self.update_and_send_position(iface)
         except Exception:
@@ -54,47 +60,35 @@ class MediaPlayerMonitor:
 
     def handle_status_change(self, status):
         self.paused = status != "Playing"
-        self.start_position_loop()
         self.device.send_playback_status(self.paused)
 
-    def start_position_loop(self):
-        if not self.is_running:
-            self.is_running = True
-            self.position_timer = threading.Thread(
-                target=self._position_loop, daemon=True
-            )
-            self.position_timer.start()
-
-    def stop_position_loop(self):
-        self.is_running = False
-        if self.position_timer:
-            self.position_timer.join(timeout=0.2)
-            self.position_timer = None
-
     def _position_loop(self):
+        while not self.current_player:
+            time.sleep(0.1)
         try:
-            player_obj = self.bus.get_object(
-                self.current_player, "/org/mpris/MediaPlayer2"
-            )
-            iface = dbus.Interface(player_obj, "org.freedesktop.DBus.Properties")
-            while self.is_running and not self.paused:
-                self.update_and_send_position(iface)
-                time.sleep(1.0)
-            self.is_running = False
+            while True:
+                player_obj = self.bus.get_object(
+                    self.current_player, "/org/mpris/MediaPlayer2"
+                )
+                iface = dbus.Interface(player_obj, "org.freedesktop.DBus.Properties")
+                if not self.paused:
+                    self.update_and_send_position(iface)
+                time.sleep(0.1)
         except Exception:
-            self.is_running = False
+            pass
 
     def update_and_send_position(self, iface):
         try:
-            metadata = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
+            metadata = self.current_metadata
             length = float(metadata.get("mpris:length", 0))
+            progress_255 = 0
             if length > 0:
                 position = float(iface.Get("org.mpris.MediaPlayer2.Player", "Position"))
                 ratio = min(position / length, 1.0)
                 progress_255 = int(ratio * 255)
-                if progress_255 != self.prev_progress_255:
-                    self.device.send_playback_progress(progress_255)
-                    self.prev_progress_255 = progress_255
+            if progress_255 != self.prev_progress_255:
+                self.device.send_playback_progress(progress_255)
+                self.prev_progress_255 = progress_255
         except Exception:
             pass
 
@@ -104,7 +98,6 @@ class MediaPlayerMonitor:
         art_url = metadata.get("mpris:artUrl", None)
         self.device.send_media_info(artist, title)
         self.device.send_media_cover(art_url)
-        self.start_position_loop()
 
     def send_current_meta(self):
         try:
@@ -113,6 +106,7 @@ class MediaPlayerMonitor:
             )
             iface = dbus.Interface(player_obj, "org.freedesktop.DBus.Properties")
             metadata = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
+            self.current_metadata = metadata
             self.send_meta(metadata)
         except Exception:
             pass
@@ -125,7 +119,9 @@ class MediaPlayerMonitor:
         if "PlaybackStatus" in changed_properties:
             self.handle_status_change(changed_properties["PlaybackStatus"])
         if "Metadata" in changed_properties:
-            self.send_meta(changed_properties["Metadata"])
+            metadata = changed_properties["Metadata"]
+            self.current_metadata = metadata
+            self.send_meta(metadata)
 
     def on_name_owner_changed(self, name, old_owner, new_owner):
         if not name.startswith("org.mpris.MediaPlayer2."):

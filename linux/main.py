@@ -23,4 +23,4 @@ class Monitor:
             self.loop.run()
         except KeyboardInterrupt:
             self.loop.quit()
-            self.media.stop_position_loop()
+            self.media.stop()
