@@ -136,6 +136,8 @@ class Device:
     def _clean_prev_data(self):
         self.prev_media_artist = None
         self.prev_media_name = None
+        self.prev_media_cover_bytes = None
+        self.prev_media_cover_url = None
         self.prev_media_font_glyphs = None
 
     def _fill_command_descriptions(self, confirmation):
