@@ -1,5 +1,6 @@
 import time
 from enum import Enum
+from typing import List, Dict, Any, Optional, Tuple
 from PIL import Image, ImageOps
 import hid
 import threading
@@ -19,6 +20,68 @@ class Commands(Enum):
     MEDIA_COVER = 9
     ASK_SCREEN_PAGE = 10
     MEDIA_FONT = 11
+
+
+class DeviceInfo:
+    def __init__(self, dev) -> None:
+        self.vid = dev.get("vendor_id", 0)
+        self.pid = dev.get("product_id", 0)
+        self.interface = dev.get("interface_number", -1)
+        self.manufacturer = dev.get("manufacturer_string") or "N/A"
+        self.product = dev.get("product_string") or "N/A"
+
+        self.path = dev.get("path", b"")
+        self.path_str = self.path.decode("utf-8", errors="replace")
+
+    def __str__(self) -> str:
+        return f"{self.manufacturer} {self.product} {self.vid:04X}:{self.pid:04X}:{self.interface}"
+
+
+VIAL_SERIAL_MAGIC = "vial:f64c2b3c"
+VIBL_SERIAL_MAGIC = "vibl:d4f8159c"
+
+
+def probe_device(
+    dev_info: DeviceInfo, packet_len: int = 32, timeout_ms: int = 500
+) -> bool:
+    try:
+        dev = hid.device()
+        dev.open_path(dev_info.path)
+        try:
+            msg = bytes([0xAA]) + bytes(packet_len - 1)
+            dev.write(msg)
+
+            resp = dev.read(packet_len, timeout_ms=timeout_ms)
+
+            if resp and len(resp) > 0 and resp[0] == 0xAA:
+                return True
+        finally:
+            dev.close()
+
+    except Exception:
+        pass
+
+    return False
+
+
+def get_devices() -> List[DeviceInfo]:
+    devices = hid.enumerate()
+    if not devices:
+        return []
+
+    candidate_devices = []
+
+    for dev in devices:
+        usage_page = dev.get("usage_page", 0)
+        usage = dev.get("usage", 0)
+        serial = dev.get("serial_number", "")
+
+        if (usage_page == 0xFF60 and usage == 0x61) or (VIAL_SERIAL_MAGIC in serial):
+            dev_info = DeviceInfo(dev)
+            if probe_device(dev_info):
+                candidate_devices.append(dev_info)
+
+    return candidate_devices
 
 
 class Device:
@@ -141,17 +204,8 @@ class Device:
         self.prev_media_font_glyphs = None
 
     def _fill_command_descriptions(self, confirmation):
-        self.command_description[Commands.ASK_CAPABILITIES] = confirmation[1]
-        self.command_description[Commands.TIME] = confirmation[2]
-        self.command_description[Commands.LANG] = confirmation[3]
-        self.command_description[Commands.VOLUME] = confirmation[4]
-        self.command_description[Commands.LAYOUT] = confirmation[5]
-        self.command_description[Commands.MEDIA_ARTIST] = confirmation[6]
-        self.command_description[Commands.MEDIA_TITLE] = confirmation[7]
-        self.command_description[Commands.MEDIA_CONTROL] = confirmation[8]
-        self.command_description[Commands.MEDIA_COVER] = confirmation[9]
-        self.command_description[Commands.ASK_SCREEN_PAGE] = confirmation[10]
-        self.command_description[Commands.MEDIA_FONT] = confirmation[11]
+        for cmd in Commands:
+            self.command_description[cmd] = confirmation[cmd.value]
 
     def _wait_for_device(self):
         while not self._closed:

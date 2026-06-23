@@ -5,3 +5,4 @@
 - [ ] Turn it to package
 - [ ] Make GUI
 - [ ] Make device list
+- [ ] Make it independent of VIAL check procedure

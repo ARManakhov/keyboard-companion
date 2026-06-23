@@ -1,8 +1,8 @@
 import sys
 import argparse
-from device import Device
+from device import Device, get_devices
 from clock import AlignedTimer
-import hid
+from gui import init as gui_init
 
 INTERVAL_SEC = 30
 
@@ -17,33 +17,16 @@ def get_monitor_class():
 
 
 def cmd_gui(args):
-    print("placeholder")
+    gui_init()
 
 
 def cmd_list(args):
-    devices = hid.enumerate()
-
-    if not devices:
-        print("No HID devices found.")
-        return
-
     print(
         f"{'VID'}  {'PID':>4}  {'IF':>4}  {'Manufacturer':<20}  {'Product':<25}  {'Path'}"
     )
-
-    for dev in devices:
-        vid = dev.get("vendor_id", 0)
-        pid = dev.get("product_id", 0)
-        interface = dev.get("interface_number", -1)
-        manufacturer = dev.get("manufacturer_string") or "N/A"
-        product = dev.get("product_string") or "N/A"
-        path = dev.get("path", b"").decode("utf-8", errors="replace")
-
-        manufacturer = manufacturer[:18]
-        product = product[:23]
-
+    for d in get_devices():
         print(
-            f"{vid:04X}  {pid:04X}  {interface:>3}  {manufacturer:<20}  {product:<25}  {path}"
+            f"{d.vid:04X}  {d.pid:04X}  {d.interface:>3}  {d.manufacturer[:18]:<20}  {d.product[:23]:<25}  {d.path}"
         )
 
 
