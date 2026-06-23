@@ -51,10 +51,11 @@ def cmd_connect(args):
     vid = args.vid
     pid = args.pid
     interface = args.interface
+    verbose = args.verbose
 
     Monitor = get_monitor_class()
 
-    device = Device(vid, pid, interface)
+    device = Device(vid, pid, interface, debug=verbose)
     if not device:
         print("Device not found.")
         return
@@ -95,6 +96,9 @@ def main():
     )
     parser_connect.add_argument(
         "--interface", type=int, default=1, help="Interface number (by default: 1)"
+    )
+    parser_connect.add_argument(
+        "--verbose", type=bool, default=False, help="be more talkative"
     )
 
     args = parser.parse_args()

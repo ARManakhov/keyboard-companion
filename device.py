@@ -50,6 +50,8 @@ class Device:
 
         self.prev_media_artist = None
         self.prev_media_name = None
+        self.prev_media_cover_bytes = None
+        self.prev_media_cover_url = None
         self.prev_media_font_glyphs = None
 
         self._reconnect()
@@ -197,7 +199,7 @@ class Device:
                         == self.command_description[Commands.ASK_CAPABILITIES]
                     ):
                         self._fill_command_descriptions(confirmation)
-                    if self.debug: 
+                    if self.debug:
                         print(f"Send {package[0]:X} package")
                     confirmed = True
                     break
@@ -376,12 +378,18 @@ class Device:
         self.write(start_packet)
 
     def send_media_cover(self, cover):
-        self.clean_media_cover()
+        if self.prev_media_cover_url == cover:
+            return
+        self.prev_media_cover_url = cover
         if cover:
             if self.debug:
                 print(cover)
             try:
                 raw_img = self.prepare_image(cover)
+                if self.prev_media_cover_bytes == raw_img:
+                    return
+                self.prev_media_cover_bytes = raw_img
+                self.clean_media_cover()
                 self.write_long(
                     raw_img,
                     Commands.MEDIA_COVER,
