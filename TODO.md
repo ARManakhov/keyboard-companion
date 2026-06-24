@@ -4,7 +4,8 @@
 - [ ] Respect capability list returned from device (don't send what it can't handle)
 - [ ] Turn it to package
 - [ ] Make GUI
-  - [ ] Add on the left of status tab current sent data
+  - [x] Add on the right of status tab current sent data
+  - [ ] Hide to tray
   - [ ] Add logs
   - [ ] Add info
   - [ ] Fix refresh bug on connected device (empty list as result)
