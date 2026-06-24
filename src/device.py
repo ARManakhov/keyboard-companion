@@ -43,7 +43,7 @@ VIBL_SERIAL_MAGIC = "vibl:d4f8159c"
 
 
 def probe_device(
-    dev_info: DeviceInfo, packet_len: int = 32, timeout_ms: int = 500
+    dev_info: DeviceInfo, packet_len: int = 32, timeout_ms: int = 100
 ) -> bool:
     try:
         dev = hid.device()
