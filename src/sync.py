@@ -1,8 +1,8 @@
 import argparse
-from device import Device, get_devices
-from clock import AlignedTimer
+from core.device import Device, get_devices
+from core.clock import AlignedTimer
 from gui import init as gui_init
-from uitls import get_monitor_class
+from core.monitor import get_monitor_class
 
 INTERVAL_SEC = 15
 

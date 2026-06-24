@@ -1,7 +1,6 @@
-from logging import debug
 import time
 from enum import Enum
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List
 from PIL import Image, ImageOps
 import hid
 import threading
