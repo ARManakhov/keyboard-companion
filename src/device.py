@@ -1,3 +1,4 @@
+from logging import debug
 import time
 from enum import Enum
 from typing import List, Dict, Any, Optional, Tuple
@@ -206,6 +207,8 @@ class Device:
     def _fill_command_descriptions(self, confirmation):
         for cmd in Commands:
             self.command_description[cmd] = confirmation[cmd.value]
+        if self.debug:
+            print(self.command_description)
 
     def _wait_for_device(self):
         while not self._closed:
@@ -218,12 +221,19 @@ class Device:
         return False
 
     def preprocess_command(self, package):
-        if isinstance(package[0], Commands):
+        command = package[0]
+        if isinstance(command, Commands):
+            if command not in self.command_description:
+                package[0] = 0x00
             package[0] = self.command_description[package[0]]
+        if package[0] == 0x00 and self.debug:
+            print(f"{command} will be skipped (not in dev capabilities)")
         return package
 
     def _send_and_confirm(self, package):
         package = self.preprocess_command(package)
+        if package[0] == 0x00:
+            return True
         package = self.pad_package(package)
         try:
             with self._lock:

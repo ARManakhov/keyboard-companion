@@ -20,11 +20,6 @@ class Backend(QObject):
         self.dev_info = get_devices()
         return self.dev_info
 
-    @pyqtSlot(int)
-    def connect_to(self, dev_index):
-        if 0 <= dev_index < len(self.dev_info):
-            self.selected_dev_info = self.dev_info[dev_index]
-
 
 def init():
     app = QGuiApplication(sys.argv)
