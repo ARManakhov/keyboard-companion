@@ -8,6 +8,7 @@ from PyQt6.QtCore import (
     QThread,
     QThreadPool,
     QUrl,
+    pyqtProperty,
     pyqtSignal,
     pyqtSlot,
 )
@@ -18,7 +19,7 @@ from device import Device, DeviceInfo, get_devices
 from clock import AlignedTimer
 from uitls import get_monitor_class
 
-INTERVAL_SEC = 30.0
+INTERVAL_SEC = 15.0
 
 
 class WorkerSignals(QObject):
@@ -45,6 +46,8 @@ class DeviceWorker(QRunnable):
 
 class DeviceThread(QThread):
     error = pyqtSignal(str)
+    capabilitiesUpdated = pyqtSignal(list)
+    connectedUpdated = pyqtSignal(bool)
 
     def __init__(self, dev_info: DeviceInfo):
         super().__init__()
@@ -59,6 +62,9 @@ class DeviceThread(QThread):
                 self._dev_info.vid,
                 self._dev_info.pid,
                 self._dev_info.interface,
+                reconnect_callback=[self._on_reconnected],
+                disconnect_callback=[self._on_disconnected],
+                capabilitis_callback=[self._on_capabilities],
                 debug=False,
             )
             if not self._device:
@@ -70,7 +76,6 @@ class DeviceThread(QThread):
 
             Monitor = get_monitor_class()
             self._monitor = Monitor(self._device)
-
             self._monitor.start()
 
         except Exception as e:
@@ -81,11 +86,27 @@ class DeviceThread(QThread):
             if self._device:
                 self._device.close()
 
+    def _on_reconnected(self):
+        self.connectedUpdated.emit(True)
+
+    def _on_disconnected(self):
+        self.connectedUpdated.emit(False)
+
+    def _on_capabilities(self, capabilities: list):
+        self.capabilitiesUpdated.emit(capabilities)
+
     def stop(self):
+        self._stopped = True
+        if self._device:
+            try:
+                self._device.reconnect_callback.remove(self._on_reconnected)
+                self._device.disconnect_callback.remove(self._on_disconnected)
+                self._device.capabilitis_callback.remove(self._on_capabilities)
+            except ValueError:
+                pass
+            self._device.close()
         if self._timer:
             self._timer.stop()
-        if self._device:
-            self._device.close()
         self.wait(2000)
 
 
@@ -93,6 +114,7 @@ class Backend(QObject):
     devicesUpdated = pyqtSignal(list)
     scanningChanged = pyqtSignal(bool)
     connectedChanged = pyqtSignal(bool)
+    deviceCapabilitiesChanged = pyqtSignal(list)
 
     def __init__(self):
         super().__init__()
@@ -100,6 +122,24 @@ class Backend(QObject):
         self.selected_dev_info: Optional[DeviceInfo] = None
         self._pool = QThreadPool.globalInstance()
         self._device_thread: Optional[DeviceThread] = None
+        self._device_connected = False
+        self._device_capabilities: list = []
+
+    @pyqtProperty(bool, notify=connectedChanged)
+    def deviceConnected(self):
+        return self._device_connected
+
+    @pyqtProperty(list, notify=deviceCapabilitiesChanged)
+    def deviceCapabilities(self):
+        return self._device_capabilities
+
+    def _set_connected(self, connected: bool):
+        if self._device_connected != connected:
+            self._device_connected = connected
+            self.connectedChanged.emit(connected)
+            if not connected:
+                self._device_capabilities = []
+                self.deviceCapabilitiesChanged.emit([])
 
     @pyqtSlot()
     def refresh_devices(self):
@@ -122,7 +162,7 @@ class Backend(QObject):
         if self._device_thread is not None:
             self._device_thread.stop()
             self._device_thread = None
-            self.connectedChanged.emit(False)
+            self._set_connected(False)
 
         if not (0 <= dev_index < len(self.dev_info)):
             return
@@ -131,23 +171,31 @@ class Backend(QObject):
         self._device_thread = DeviceThread(self.selected_dev_info)
         self._device_thread.error.connect(self._on_device_error)
         self._device_thread.finished.connect(self._on_device_finished)
+        self._device_thread.capabilitiesUpdated.connect(self._on_capabilities_updated)
+        self._device_thread.connectedUpdated.connect(self._on_connected_updated)
         self._device_thread.start()
-        self.connectedChanged.emit(True)
+
+    def _on_connected_updated(self, connected: bool):
+        self._set_connected(connected)
+
+    def _on_capabilities_updated(self, caps: list):
+        self._device_capabilities = caps
+        self.deviceCapabilitiesChanged.emit(caps)
 
     @pyqtSlot()
     def disconnect(self):
         if self._device_thread is not None:
             self._device_thread.stop()
             self._device_thread = None
-        self.connectedChanged.emit(False)
+        self._set_connected(False)
 
     def _on_device_error(self, msg: str):
         print(f"Device error: {msg}")
-        self.connectedChanged.emit(False)
+        self._set_connected(False)
 
     def _on_device_finished(self):
         self._device_thread = None
-        self.connectedChanged.emit(False)
+        self._set_connected(False)
 
 
 def init():

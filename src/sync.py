@@ -4,9 +4,7 @@ from clock import AlignedTimer
 from gui import init as gui_init
 from uitls import get_monitor_class
 
-INTERVAL_SEC = 30
-
-
+INTERVAL_SEC = 15
 
 
 def cmd_gui(args):

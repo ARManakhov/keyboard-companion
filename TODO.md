@@ -4,5 +4,10 @@
 - [ ] Respect capability list returned from device (don't send what it can't handle)
 - [ ] Turn it to package
 - [ ] Make GUI
+  - [ ] Add on the left of status tab current sent data
+  - [ ] Add logs
+  - [ ] Add info
+  - [ ] Fix refresh bug on connected device (empty list as result)
 - [ ] Make device list
 - [ ] Make it independent of VIAL check procedure
+- [ ] add heartbeat command

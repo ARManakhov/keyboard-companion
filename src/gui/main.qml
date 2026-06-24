@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 ApplicationWindow {
     id: window
@@ -88,13 +89,80 @@ ApplicationWindow {
             width: parent.width
             height: parent.height - bar.height
             padding: 10
+            background: Rectangle {
+                color: palette.window
+            }
 
             Item {
                 anchors.fill: parent
                 visible: bar.currentIndex === 0
-                Text {
-                    color: window.palette.windowText
-                    text: "Placeholder for status"
+
+                Row {
+                    anchors.fill: parent
+                    spacing: 0
+
+                    Rectangle {
+                        width: parent.width / 2
+                        height: parent.height
+                        color: palette.window
+
+                        Column {
+                            anchors.fill: parent
+                            anchors.margins: 10
+                            spacing: 10
+
+                            Row {
+                                spacing: 8
+                                Text {
+                                    color: palette.windowText
+                                    text: "Status:"
+                                    font.bold: true
+                                }
+                                Text {
+                                    color: palette.windowText
+                                    text: backend.deviceConnected ? "Connected" : "Disconnected"
+                                    font.bold: true
+                                }
+                            }
+
+                            Rectangle {
+                                width: parent.width
+                                height: 1
+                                color: palette.mid
+                            }
+
+                            Text {
+                                color: palette.windowText
+                                text: "Capabilities:"
+                                font.bold: true
+                            }
+
+                            ListView {
+                                width: parent.width
+                                height: parent.height - y
+                                spacing: 4
+                                model: backend.deviceCapabilities
+                                clip: true
+
+                                delegate: Text {
+                                    color: palette.windowText
+                                    text: "• " + modelData
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        width: 1
+                        height: parent.height
+                        color: palette.mid
+                    }
+
+                    Rectangle {
+                        width: parent.width / 2 - 1
+                        height: parent.height
+                        color: palette.window
+                    }
                 }
             }
 
@@ -102,7 +170,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 visible: bar.currentIndex === 1
                 Text {
-                    color: window.palette.windowText
+                    color: palette.windowText
                     text: "Placeholder for logs"
                 }
             }
@@ -111,7 +179,7 @@ ApplicationWindow {
                 anchors.fill: parent
                 visible: bar.currentIndex === 2
                 Text {
-                    color: window.palette.windowText
+                    color: palette.windowText
                     text: "Placeholder for info"
                 }
             }

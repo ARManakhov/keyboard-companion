@@ -86,7 +86,17 @@ def get_devices() -> List[DeviceInfo]:
 
 
 class Device:
-    def __init__(self, vid, pid, interface, package_size=32, debug=False):
+    def __init__(
+        self,
+        vid,
+        pid,
+        interface,
+        disconnect_callback=[],
+        reconnect_callback=[],
+        capabilitis_callback=[],
+        package_size=32,
+        debug=False,
+    ):
         self.vid = vid
         self.pid = pid
         self.interface = interface
@@ -103,11 +113,16 @@ class Device:
         self._closed = False
         self.write_queue = queue.Queue()
 
+        self.disconnect_callback = []
         self.reconnect_callback = [
             self._clean_prev_data,
             self._send_ask_capabilities,
             self.send_time,
         ]
+        self.capabilitis_callback = []
+        self.disconnect_callback.extend(disconnect_callback)
+        self.reconnect_callback.extend(reconnect_callback)
+        self.capabilitis_callback.extend(capabilitis_callback)
 
         self.write_task = threading.Thread(target=self._write, daemon=True)
         self.write_task.start()
@@ -147,6 +162,11 @@ class Device:
             return
 
         self._reconnecting = True
+        for callback in self.disconnect_callback:
+            try:
+                callback()
+            except Exception as e:
+                print(f"[USB] Disonnect callback error: {e}")
         try:
             with self._lock:
                 if self.device:
@@ -209,6 +229,12 @@ class Device:
             self.command_description[cmd] = confirmation[cmd.value]
         if self.debug:
             print(self.command_description)
+        capabilities = []
+        for i in self.command_description.keys():
+            if self.command_description[i] != 0x00:
+                capabilities.append(i)
+        for callback in self.capabilitis_callback:
+            callback(capabilities)
 
     def _wait_for_device(self):
         while not self._closed:
