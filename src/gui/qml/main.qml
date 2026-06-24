@@ -6,7 +6,6 @@ import "tabs"
 
 ApplicationWindow {
     id: window
-    visible: true
     title: "Keyboard companion"
 
     Connections {
