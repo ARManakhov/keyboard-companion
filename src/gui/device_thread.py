@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QThread, pyqtSignal
-from typing import Optional, Tuple
+from typing import Optional
 from core.device import Device, DeviceInfo
 from core.clock import AlignedTimer
 from core.monitor import get_monitor_class

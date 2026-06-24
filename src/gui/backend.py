@@ -1,6 +1,7 @@
 from PyQt6.QtCore import QObject, QThreadPool, pyqtProperty, pyqtSignal, pyqtSlot
-from typing import List, Optional, Self
+from typing import List, Optional
 from core.device import DeviceInfo, get_devices
+from gui.log import LogModel
 from gui.scanner import DeviceScanner
 from gui.device_thread import DeviceThread
 from datetime import datetime
@@ -34,6 +35,7 @@ class Backend(QObject):
         self._media_cover = ""
         self._playback_status = False
         self._playback_progress = 0
+        self._log_model = LogModel()
 
     @pyqtProperty(bool, notify=connectedChanged)
     def deviceConnected(self):
@@ -72,6 +74,10 @@ class Backend(QObject):
     @pyqtProperty(str, notify=clockChanged)
     def clock(self):
         return datetime.now().strftime("%Y %m %d %H:%M")
+
+    @pyqtProperty(QObject, constant=True)
+    def logModel(self):
+        return self._log_model
 
     def _set_connected(self, connected: bool):
         if self._device_connected != connected:
