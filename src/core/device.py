@@ -445,10 +445,11 @@ class Device:
 
             print(f"error on generating font {e}\n{traceback.format_exc()}")
 
-    def send_media_info(self, artist, name):
+    def send_media_info(self, artist, name, cover_url):
         self.send_media_artist(artist)
         self.send_media_name(name)
         self.send_media_font_for_text(artist + name)
+        self.send_media_cover(cover_url)
 
     def send_media_artist(self, artist):
         if self.prev_media_artist == artist:

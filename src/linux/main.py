@@ -6,14 +6,22 @@ from gi.repository import GLib
 
 
 class Monitor:
-    def __init__(self, device):
+    def __init__(self, device, layout_callback=[]):
         self.device = device
         DBusGMainLoop(set_as_default=True)
         self.bus = dbus.SessionBus()
         self.loop = GLib.MainLoop()
 
-        self.keyboard = KeyboardLayoutMonitor(device, self.bus)
-        self.media = MediaPlayerMonitor(device, self.bus)
+        layout_callback.append(self.device.send_keyboard_layout)
+        self.keyboard = KeyboardLayoutMonitor(self.bus, callback=layout_callback)
+        self.media = MediaPlayerMonitor(
+            self.bus,
+            info_callback=[device.send_media_info],
+            status_callback=[device.send_playback_status],
+            progress_callback=[device.send_playback_progress],
+        )
+        device.reconnect_callback.extend(self.keyboard.call_on_reconnect())
+        device.reconnect_callback.extend(self.media.call_on_reconnect())
 
     def start(self):
         self.media.start()

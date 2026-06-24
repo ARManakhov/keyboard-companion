@@ -1,21 +1,25 @@
 import subprocess
 import ast
+from typing import Self
 
 import dbus
 
 
 class KeyboardLayoutMonitor:
-    def __init__(self, device, bus):
-        self.device = device
+    def __init__(self, bus, callback=[]):
         self.bus = bus
         self.prev_layout = None
         self.layout_method = None
         self.layout_signal_match = None
         self.kde_has_getcurrent = False
 
+        self.callback = []
+        self.callback.extend(callback)
+
         self._detect_layout_method()
 
-        self.device.reconnect_callback.append(self.check_initial_layout)
+    def call_on_reconnect(self):
+        return [self.check_initial_layout]
 
     def _detect_layout_method(self):
         try:
@@ -176,11 +180,11 @@ class KeyboardLayoutMonitor:
 
     def _send_layout(self, layout):
         self.prev_layout = layout
-        if hasattr(self.device, "send_keyboard_layout"):
+        for c in self.callback:
             try:
-                self.device.send_keyboard_layout(layout)
+                c(layout)
             except Exception as e:
-                print(f"send_keyboard_layout FAILED: {e}")
+                print(f"send layout with callback {c} failed: {e}")
 
     def check_initial_layout(self):
         layout = self.get_current_layout()

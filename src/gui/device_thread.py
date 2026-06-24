@@ -7,7 +7,6 @@ from core.monitor import get_monitor_class
 INTERVAL_SEC = 15.0
 
 class DeviceThread(QThread):
-    # Сигналы для Backend (не для QML напрямую)
     error = pyqtSignal(str)
     capabilitiesUpdated = pyqtSignal(list)
     connectedUpdated = pyqtSignal(bool)
@@ -42,7 +41,6 @@ class DeviceThread(QThread):
             self._monitor = Monitor(self._device)
             self._monitor.start()
 
-            # Удерживаем поток живым, пока не вызовут stop()
             while not self._stopped:
                 self.msleep(100)
 

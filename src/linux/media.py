@@ -7,8 +7,7 @@ from gi.repository import GLib
 
 
 class MediaPlayerMonitor:
-    def __init__(self, device, bus):
-        self.device = device
+    def __init__(self, bus, info_callback=[], status_callback=[], progress_callback=[]):
         self.bus = bus
         self.current_player = None
         self.is_running = False
@@ -17,11 +16,15 @@ class MediaPlayerMonitor:
         self.prev_progress_255 = None
         self.current_metadata = {}
 
-        self.device.reconnect_callback.append(self.check_initial_state)
-        self.device.reconnect_callback.append(self.send_current_meta)
+        self.info_callback = info_callback
+        self.status_callback = status_callback
+        self.progress_callback = progress_callback
 
         self.position_worker = threading.Thread(target=self._position_loop, daemon=True)
         self.position_worker.start()
+
+    def call_on_reconnect(self):
+        return [self.check_initial_state, self.send_current_meta]
 
     def find_active_player(self):
         players = [
@@ -60,7 +63,11 @@ class MediaPlayerMonitor:
 
     def handle_status_change(self, status):
         self.paused = status != "Playing"
-        self.device.send_playback_status(self.paused)
+        for c in self.status_callback:
+            try:
+                c(self.paused)
+            except Exception as e:
+                print(f"media status callback {c} failed {e}")
 
     def _position_loop(self):
         while not self.current_player:
@@ -87,7 +94,11 @@ class MediaPlayerMonitor:
                 ratio = min(position / length, 1.0)
                 progress_255 = int(ratio * 255)
             if progress_255 != self.prev_progress_255:
-                self.device.send_playback_progress(progress_255)
+                for c in self.progress_callback:
+                    try:
+                        c(progress_255)
+                    except Exception as e:
+                        print(f"media progress callback {c} failed {e}")
                 self.prev_progress_255 = progress_255
         except Exception:
             pass
@@ -96,8 +107,11 @@ class MediaPlayerMonitor:
         artist = ", ".join(metadata.get("xesam:artist", ["Unknown"]))
         title = metadata.get("xesam:title", "Unknown")
         art_url = metadata.get("mpris:artUrl", None)
-        self.device.send_media_info(artist, title)
-        self.device.send_media_cover(art_url)
+        for c in self.info_callback:
+            try:
+                c(artist, title, art_url)
+            except Exception as e:
+                print(f"media info callback {c} failed {e}")
 
     def send_current_meta(self):
         try:
