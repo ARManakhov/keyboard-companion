@@ -8,10 +8,20 @@ ApplicationWindow {
     height: 300
     title: "Keyboard companion"
 
+    Connections {
+        target: backend
+        function onDevicesUpdated(devices) {
+            deviceComboBox.model = devices;
+        }
+        function onScanningChanged(scanning) {
+            btnRefresh.text = scanning ? "Scanning..." : "Refresh";
+            btnRefresh.enabled = !scanning;
+        }
+    }
+
     Row {
         id: topRow
         spacing: 6
-
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.right: parent.right
@@ -23,7 +33,7 @@ ApplicationWindow {
             model: []
 
             Component.onCompleted: {
-                deviceComboBox.model = backend.list_devs();
+                backend.refresh_devices();
             }
 
             onCurrentIndexChanged: {
@@ -38,7 +48,7 @@ ApplicationWindow {
             text: "Refresh"
             width: implicitWidth
             onClicked: {
-                deviceComboBox.model = backend.list_devs();
+                backend.refresh_devices();
             }
         }
     }
@@ -50,7 +60,6 @@ ApplicationWindow {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-
         anchors.topMargin: 10
         anchors.bottomMargin: 10
         anchors.leftMargin: 10

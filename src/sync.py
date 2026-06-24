@@ -1,19 +1,12 @@
-import sys
 import argparse
 from device import Device, get_devices
 from clock import AlignedTimer
 from gui import init as gui_init
+from uitls import get_monitor_class
 
 INTERVAL_SEC = 30
 
 
-def get_monitor_class():
-    if sys.platform.startswith("linux"):
-        from linux.main import Monitor
-
-        return Monitor
-    print(f"Unsupported platform: {sys.platform}.")
-    sys.exit(1)
 
 
 def cmd_gui(args):
