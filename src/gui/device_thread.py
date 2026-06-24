@@ -4,7 +4,8 @@ from core.device import Device, DeviceInfo
 from core.clock import AlignedTimer
 from core.monitor import get_monitor_class
 
-INTERVAL_SEC = 15.0
+INTERVAL_SEC = 15
+
 
 class DeviceThread(QThread):
     error = pyqtSignal(str)
@@ -34,11 +35,18 @@ class DeviceThread(QThread):
                 self.error.emit("Device not found")
                 return
 
-            self._timer = AlignedTimer(INTERVAL_SEC, self._device.send_time)
+            self._timer = AlignedTimer(INTERVAL_SEC, [self._device.send_time])
             self._timer.start(fire_immediately=True)
 
             Monitor = get_monitor_class()
-            self._monitor = Monitor(self._device)
+
+            self._monitor = Monitor(
+                layout_callback=[self._device.send_keyboard_layout],
+                info_callback=[self._device.send_media_info],
+                status_callback=[self._device.send_playback_status],
+                progress_callback=[self._device.send_playback_progress],
+            )
+            self._device.reconnect_callback.extend(self._monitor.call_on_reconnect())
             self._monitor.start()
 
             while not self._stopped:
@@ -67,7 +75,11 @@ class DeviceThread(QThread):
     def stop(self):
         self._stopped = True
         if self._device:
-            for cb in [self._on_reconnected, self._on_disconnected, self._on_capabilities]:
+            for cb in [
+                self._on_reconnected,
+                self._on_disconnected,
+                self._on_capabilities,
+            ]:
                 try:
                     self._device.reconnect_callback.remove(cb)
                 except ValueError:
@@ -75,4 +87,3 @@ class DeviceThread(QThread):
             self._device.close()
         if self._timer:
             self._timer.stop()
-        self.wait(2000)

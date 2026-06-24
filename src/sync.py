@@ -1,13 +1,14 @@
 import argparse
 from core.device import Device, get_devices
 from core.clock import AlignedTimer
-from gui import init as gui_init
 from core.monitor import get_monitor_class
 
 INTERVAL_SEC = 15
 
 
 def cmd_gui(args):
+    from gui import init as gui_init
+
     gui_init()
 
 
@@ -34,10 +35,17 @@ def cmd_connect(args):
         print("Device not found.")
         return
 
-    timer = AlignedTimer(INTERVAL_SEC, device.send_time)
+    timer = AlignedTimer(INTERVAL_SEC, [device.send_time])
 
     try:
-        monitor = Monitor(device)
+        monitor = Monitor(
+            layout_callback=[device.send_keyboard_layout],
+            info_callback=[device.send_media_info],
+            status_callback=[device.send_playback_status],
+            progress_callback=[device.send_playback_progress],
+        )
+        device.reconnect_callback.extend(monitor.call_on_reconnect())
+
         timer.start(fire_immediately=True)
         monitor.start()
     finally:
