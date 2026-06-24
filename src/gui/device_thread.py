@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QThread, pyqtSignal
-from typing import Optional
+from typing import Optional, Tuple
 from core.device import Device, DeviceInfo
 from core.clock import AlignedTimer
 from core.monitor import get_monitor_class
@@ -11,6 +11,13 @@ class DeviceThread(QThread):
     error = pyqtSignal(str)
     capabilitiesUpdated = pyqtSignal(list)
     connectedUpdated = pyqtSignal(bool)
+    keyboardLayoutUpdated = pyqtSignal(str)
+    mediaArtistUpdated = pyqtSignal(str)
+    mediaNameUpdated = pyqtSignal(str)
+    mediaCoverUpdated = pyqtSignal(str)
+    playbackStatusUpdated = pyqtSignal(bool)
+    playbackProgressUpdated = pyqtSignal(int)
+    clockUpdated = pyqtSignal()
 
     def __init__(self, dev_info: DeviceInfo):
         super().__init__()
@@ -35,16 +42,25 @@ class DeviceThread(QThread):
                 self.error.emit("Device not found")
                 return
 
-            self._timer = AlignedTimer(INTERVAL_SEC, [self._device.send_time])
+            self._timer = AlignedTimer(INTERVAL_SEC, [self._device.send_time, self._on_clock_update])
             self._timer.start(fire_immediately=True)
 
             Monitor = get_monitor_class()
 
             self._monitor = Monitor(
-                layout_callback=[self._device.send_keyboard_layout],
-                info_callback=[self._device.send_media_info],
-                status_callback=[self._device.send_playback_status],
-                progress_callback=[self._device.send_playback_progress],
+                layout_callback=[
+                    self._device.send_keyboard_layout,
+                    self._send_keyboard_layout,
+                ],
+                info_callback=[self._device.send_media_info, self._send_media_info],
+                status_callback=[
+                    self._device.send_playback_status,
+                    self._send_playback_status,
+                ],
+                progress_callback=[
+                    self._device.send_playback_progress,
+                    self._send_playback_progress,
+                ],
             )
             self._device.reconnect_callback.extend(self._monitor.call_on_reconnect())
             self._monitor.start()
@@ -63,6 +79,20 @@ class DeviceThread(QThread):
         if self._device:
             self._device.close()
 
+    def _send_keyboard_layout(self, data: str):
+        self.keyboardLayoutUpdated.emit(data)
+
+    def _send_media_info(self, artist, name, cover):
+        self.mediaArtistUpdated.emit(artist)
+        self.mediaNameUpdated.emit(name)
+        self.mediaCoverUpdated.emit(cover)
+
+    def _send_playback_status(self, data: bool):
+        self.playbackStatusUpdated.emit(data)
+
+    def _send_playback_progress(self, data: int):
+        self.playbackProgressUpdated.emit(data)
+
     def _on_reconnected(self):
         self.connectedUpdated.emit(True)
 
@@ -71,6 +101,9 @@ class DeviceThread(QThread):
 
     def _on_capabilities(self, capabilities: list):
         self.capabilitiesUpdated.emit(capabilities)
+
+    def _on_clock_update(self):
+        self.clockUpdated.emit()
 
     def stop(self):
         self._stopped = True
