@@ -5,7 +5,7 @@ from PIL import Image, ImageOps
 import hid
 import threading
 import queue
-from font import generate_and_load_qff_auto
+from core.font import generate_and_load_qff_auto
 
 
 class Commands(Enum):
