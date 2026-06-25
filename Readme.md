@@ -2,6 +2,7 @@
 
 Companion app for QMK keyboard, that communicates via rawHID
 
+![screenshot of GUI window](img/screenshot.png)
 ## Capabilities
 
 This software primarily made to send that information to keyboard:
@@ -32,9 +33,8 @@ flatpak run dev.sirosh.keyboard-companion
 
 Or just find it in application list and run
 
-By default it will start in tray, you can expand it to view detailed info or choose another device:
+By default it will start in tray, you can expand it to view detailed info or choose another device
 
-![screenshot of GUI window](img/screenshot.png)
 
 ### CLI
 
