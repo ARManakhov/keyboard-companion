@@ -6,6 +6,6 @@ packaging==26.2
 pillow==12.2.0
 pycairo==1.29.0
 PyGObject==3.56.3
-# PyQt6==6.11.0
-# PyQt6-Qt6==6.11.1
-# PyQt6_sip==13.11.1
+PyQt6==6.11.0
+PyQt6-Qt6==6.11.1
+PyQt6_sip==13.11.1

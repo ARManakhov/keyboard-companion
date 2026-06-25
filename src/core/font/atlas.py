@@ -1,9 +1,7 @@
-import subprocess
-import tempfile
-import pathlib
-from typing import List
 from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont, TTCollection
+import pathlib
+from typing import List
 
 
 class FontResolver:
@@ -30,7 +28,7 @@ class FontResolver:
                                 pil_font = ImageFont.truetype(p, self.size, index=idx)
                                 self.font_list.append((pil_font, supported_chars))
                 except Exception as e:
-                    print(f"Ошибка при чтении коллекции {p}: {e}")
+                    print(f"Error on reading font collection {p}: {e}")
             else:
                 try:
                     with TTFont(p) as font:
@@ -40,7 +38,7 @@ class FontResolver:
                         pil_font = ImageFont.truetype(p, self.size)
                         self.font_list.append((pil_font, supported_chars))
                 except Exception as e:
-                    print(f"Ошибка при чтении шрифта {p}: {e}")
+                    print(f"Error on reading font {p}: {e}")
 
     def resolve_font(self, ch: str) -> ImageFont.FreeTypeFont:
         code = ord(ch)
@@ -52,7 +50,7 @@ class FontResolver:
         return self.default_font
 
 
-def _generate_font_atlas_pil(
+def generate_font_atlas_pil(
     default_font: str,
     additional_font: List[str],
     output_png: pathlib.Path,
@@ -105,58 +103,3 @@ def _generate_font_atlas_pil(
         x += w
 
     img.save(output_png, "PNG")
-
-
-asset_path = pathlib.Path(__file__).resolve().parent.parent / "assets"
-
-
-def generate_and_load_qff_auto(
-    unicode_glyphs: str,
-    size: int = 12,
-    fmt: str = "mono2",
-    *,
-    default_font: str = str(asset_path / "NotoSans-Regular.ttf"),
-    additional_font: List[str] = [
-        str(asset_path / "NotoSansCJK-Regular.ttc"),
-        str(asset_path / "NotoEmoji-Regular.ttf"),
-    ],
-) -> bytearray:
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = pathlib.Path(tmp)
-        png_path = tmp_path / "font_atlas.png"
-
-        _generate_font_atlas_pil(
-            default_font=default_font,
-            additional_font=additional_font,
-            output_png=png_path,
-            unicode_glyphs=unicode_glyphs,
-            size=size,
-        )
-
-        result = subprocess.run(
-            [
-                "qmk",
-                "painter-convert-font-image",
-                "--input",
-                str(png_path),
-                "-f",
-                fmt,
-                "--unicode-glyphs",
-                unicode_glyphs,
-                "-n",
-                "-w",
-            ],
-            check=True,
-            capture_output=True,
-        )
-
-        if result.stdout:
-            print(f"[QFF] Got {len(result.stdout)} bytes from stdout")
-            return bytearray(result.stdout)
-
-        qff_path = png_path.with_suffix(".qff")
-        if qff_path.exists() and qff_path.stat().st_size > 0:
-            with open(qff_path, "rb") as f:
-                return bytearray(f.read())
-
-        raise RuntimeError("QFF generation failed: no data in stdout or file")
