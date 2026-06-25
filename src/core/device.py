@@ -458,6 +458,8 @@ class Device:
         self.write(start_packet)
 
     def send_media_cover(self, cover):
+        if cover is None:
+            self.clean_media_cover()
         if self.prev_media_cover_url == cover:
             return
         self.prev_media_cover_url = cover
