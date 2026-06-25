@@ -6,6 +6,7 @@ import hid
 import threading
 import queue
 from core.font import generate_and_load_qff_auto
+from qmk.painter import convert_image_bytes, valid_formats
 
 
 class Commands(Enum):
@@ -386,20 +387,7 @@ class Device:
         img = Image.open(image_path.replace("file://", "")).convert("RGB")
         img = ImageOps.pad(img, (target_size, target_size), color=(0, 0, 0))
 
-        raw_bytes = []
-
-        for y in range(target_size):
-            for x in range(target_size):
-                r, g, b = img.getpixel((x, y))
-                r_5 = (r >> 3) & 0x1F
-                g_6 = (g >> 2) & 0x3F
-                b_5 = (b >> 3) & 0x1F
-
-                rgb565 = (r_5 << 11) | (g_6 << 5) | b_5
-
-                raw_bytes.append((rgb565 >> 8) & 0xFF)
-                raw_bytes.append(rgb565 & 0xFF)
-
+        _, raw_bytes = convert_image_bytes(img, valid_formats["rgb565"])
         return raw_bytes
 
     def send_playback_progress(self, progress):
