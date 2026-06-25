@@ -5,7 +5,7 @@ from PyQt6.QtCore import QObject, pyqtSlot, QEvent
 
 
 class TrayController(QObject):
-    def __init__(self, app, window, icon_path=None):
+    def __init__(self, app, window, icon):
         super().__init__()
         self._app = app
         self._window = window
@@ -15,10 +15,7 @@ class TrayController(QObject):
             return
 
         self.tray = QSystemTrayIcon(self)
-        if icon_path and Path(icon_path).exists():
-            self.tray.setIcon(QIcon(str(icon_path)))
-        else:
-            self.tray.setIcon(QIcon.fromTheme("input-keyboard"))
+        self.tray.setIcon(icon)
 
         self.tray.setToolTip("Keyboard Companion")
 
