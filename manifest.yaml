@@ -39,17 +39,15 @@ modules:
         cat > /app/bin/keyboard-companion-launcher << 'eof'
         #!/bin/sh
         export PYTHONPATH="/app/lib/python3.13/site-packages:${PYTHONPATH:-}"
-        exec python3 /app/lib/python3.13/site-packages/keyboard-companion/sync.py "$@"
+        if [ $# -eq 0 ]; then
+            exec python3 /app/lib/python3.13/site-packages/keyboard-companion/sync.py gui
+        else
+            exec python3 /app/lib/python3.13/site-packages/keyboard-companion/sync.py "$@"
+        fi
         eof
       - chmod +x /app/bin/keyboard-companion-launcher
+      - install -Dm644 src/assets/keyboard-companion.desktop /app/share/applications/dev.sirosh.keyboard-companion.desktop
+      - install -Dm644 src/assets/icon.png /app/share/icons/hicolor/128x128/apps/dev.sirosh.keyboard-companion.png
     sources:
       - type: dir
         path: .
-      - type: file
-        path: src/assets/keyboard-companion.desktop
-        dest: share/applications/
-        dest-filename: dev.sirosh.keyboard-companion.desktop
-      - type: file
-        path: src/assets/icon.png
-        dest: share/icons/hicolor/128x128/apps/
-        dest-filename: dev.sirosh.keyboard-companion.png
