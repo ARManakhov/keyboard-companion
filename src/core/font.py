@@ -109,8 +109,6 @@ def _generate_font_atlas_pil(
 
 asset_path = pathlib.Path(__file__).resolve().parent.parent / "assets"
 
-print(asset_path)
-
 
 def generate_and_load_qff_auto(
     unicode_glyphs: str,
