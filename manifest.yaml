@@ -1,0 +1,59 @@
+id: dev.sirosh.keyboard-companion
+runtime: org.kde.Platform
+runtime-version: "6.10"
+sdk: org.kde.Sdk
+command: keyboard-companion-launcher
+
+build-options:
+  build-args:
+    - --share=network
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=all #TODO make narrower scope
+  - --socket=session-bus #TODO make narrower scope
+
+modules:
+  - name: libxcb-cursor
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://xcb.freedesktop.org/dist/xcb-util-cursor-0.1.6.tar.gz
+        sha256: eae38b2dfc5c529a886e507ef576b12d2a20aa1f149608e4853af760f31be60b
+  - name: krb5
+    subdir: src
+    config-opts:
+      - --localstatedir=/var/lib
+      - --disable-rpath
+      - --disable-static
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.22/krb5-1.22.2.tar.gz
+        sha256: 3243ffbc8ea4d4ac22ddc7dd2a1dc54c57874c40648b60ff97009763554eaf13
+  - name: keyboard-companion
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --prefix=${FLATPAK_DEST} -r requirements.txt
+
+      - mkdir -p /app/bin /app/lib/python3.13/site-packages/keyboard-companion
+      - cp -r src/* /app/lib/python3.13/site-packages/keyboard-companion/
+
+      - |
+        cat > /app/bin/keyboard-companion-launcher << 'eof'
+        #!/bin/sh
+        export PYTHONPATH="/app/lib/python3.13/site-packages:${PYTHONPATH:-}"
+        exec python3 /app/lib/python3.13/site-packages/keyboard-companion/sync.py "$@"
+        eof
+      - chmod +x /app/bin/keyboard-companion-launcher
+    sources:
+      - type: dir
+        path: .
+      - type: file
+        path: src/assets/keyboard-companion.desktop
+        dest: share/applications/
+        dest-filename: dev.sirosh.keyboard-companion.desktop
+      - type: file
+        path: src/assets/icon.png
+        dest: share/icons/hicolor/128x128/apps/
+        dest-filename: dev.sirosh.keyboard-companion.png

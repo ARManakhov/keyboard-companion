@@ -107,15 +107,20 @@ def _generate_font_atlas_pil(
     img.save(output_png, "PNG")
 
 
+asset_path = pathlib.Path(__file__).resolve().parent.parent / "assets"
+
+print(asset_path)
+
+
 def generate_and_load_qff_auto(
     unicode_glyphs: str,
     size: int = 12,
     fmt: str = "mono2",
     *,
-    default_font: str = "noto_font_files/NotoSans-Regular.ttf",
+    default_font: str = str(asset_path / "NotoSans-Regular.ttf"),
     additional_font: List[str] = [
-        "noto_font_files/NotoSansCJK-Regular.ttc",
-        "noto_font_files/NotoEmoji-Regular.ttf",
+        str(asset_path / "NotoSansCJK-Regular.ttc"),
+        str(asset_path / "NotoEmoji-Regular.ttf"),
     ],
 ) -> bytearray:
     with tempfile.TemporaryDirectory() as tmp:

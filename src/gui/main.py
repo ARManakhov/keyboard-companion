@@ -3,11 +3,10 @@ from pathlib import Path
 from PyQt6.QtQml import (
     QQmlApplicationEngine,
 )
+from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QUrl
 from PyQt6.QtGui import QIcon
 from gui.backend import Backend
-from PyQt6.QtWidgets import QApplication
-
 from gui.log import StdoutCapture
 from gui.tray import TrayController
 

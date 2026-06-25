@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Keyboard Companion
+Comment=A utility for your keyboard
+Exec=/app/bin/keyboard-companion-launcher %F
+Icon=dev.sirosh.keyboard-companion
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+Keywords=keyboard;companion;settings;

@@ -1,6 +1,11 @@
-from PyQt6.QtCore import QAbstractListModel, QModelIndex, Qt, pyqtSlot, QObject
-
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import (
+    QAbstractListModel,
+    QModelIndex,
+    Qt,
+    pyqtSlot,
+    QObject,
+    pyqtSignal,
+)
 
 
 class LogModel(QAbstractListModel):
