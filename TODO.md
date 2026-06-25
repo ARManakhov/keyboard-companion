@@ -1,14 +1,14 @@
 - [ ] Remove font files from repo, and create script to fetch them
 - [ ] Add support for MacOs
 - [ ] Add support for windows
-- [ ] Respect capability list returned from device (don't send what it can't handle)
+- [x] Respect capability list returned from device (don't send what it can't handle)
 - [ ] Turn it to package
 - [ ] Make GUI
   - [x] Add on the right of status tab current sent data
-  - [ ] Hide to tray
-  - [ ] Add logs
-  - [ ] Add info
+  - [x] Hide to tray
+  - [x] Add logs
+  - [x] Add info
   - [ ] Fix refresh bug on connected device (empty list as result)
-- [ ] Make device list
+- [x] Make device list
 - [ ] Make it independent of VIAL check procedure
 - [ ] add heartbeat command
